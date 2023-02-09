@@ -1,38 +1,51 @@
 from django import forms
-from .models import UserProfile,Department,Ticket
-from django.contrib.auth.forms import UserCreationForm
+from .models import User
+from .models import Department
+from .models import Ticket
 
-class UserForm(forms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ['Name', 'email', 'phone_number','department','role']
-        widgets = {
-            'password': forms.PasswordInput(),
-        }
+class LoginForm(forms.Form):
+    username = forms.CharField()
+    password = forms.CharField(widget=forms.PasswordInput)
 
+    def clean(self):
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
 
-# class CustomUserCreationForm(UserCreationForm):
-#     email = forms.EmailField(required=True)
-#     class Meta:
-#         model = UserProfile
-#         fields = ['Name', 'email', 'password1', 'password2']
-#         def save(self, commit=True):
-#             user = super().save(commit=False)
-#             user.email = self.cleaned_data['email']
-#             if commit:
-#                 user.save()
-#                 return user
+        if username and password:
+            try:
+                user = User.objects.get(email=username)
+                if not user.check_password(password):
+                    raise forms.ValidationError("Invalid login")
+            except User.DoesNotExist:
+                try:
+                    user = User.objects.get(phone_number=username)
+                    if not user.check_password(password):
+                        raise forms.ValidationError("Invalid login")
+                except User.DoesNotExist:
+                    raise forms.ValidationError("Invalid login")
+
+        return self.cleaned_data
+
 
 
 class DepartmentForm(forms.ModelForm):
     class Meta:
         model = Department
         fields = ['name', 'description']
+
+
+
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ['name', 'email', 'phone_number', 'password', 'department', 'role']
+
         
- 
 
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['subject', 'body', 'priority']
+        fields = ['subject', 'body', 'priority', 'email', 'phone_number']
 

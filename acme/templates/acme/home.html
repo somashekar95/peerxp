@@ -1,0 +1,25 @@
+{% if messages %}
+    {% for message in messages %}
+        <p class="alert alert-{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Actions</th>
+    </tr>
+    {% for department in departments %}
+    <tr>
+        <td>{{ department.name }}</td>
+        <td>{{ department.description }}</td>
+        <td>
+            <a href="{% url 'update_department' department.id %}">Update</a>
+            <a href="{% url 'delete_department' department.id %}" onclick="return confirm('Are you sure?');">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'create_department' %}">Create Department</a>

@@ -1,0 +1,31 @@
+{% if messages %}
+    {% for message in messages %}
+        <p class="alert alert-{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone Number</th>
+        <th>Department</th>
+        <th>Role</th>
+        <th>Actions</th>
+    </tr>
+    {% for user in users %}
+    <tr>
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.phone_number }}</td>
+        <td>{{ user.department.name }}</td>
+        <td>{{ user.role }}</td>
+        <td>
+            <a href="{% url 'update_user' user.id %}">Update</a>
+            <a href="{% url 'delete_user' user.id %}" onclick="return confirm('Are you sure?');">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{% url 'create_user' %}">Create User</a>
