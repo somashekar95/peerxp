@@ -26,7 +26,9 @@ class User(AbstractBaseUser):
     created_by = models.ForeignKey(AuthUser, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_admin = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    staff = models.BooleanField(default=False) # a admin user; non super-user
+    admin = models.BooleanField(default=False)
     
 
     USERNAME_FIELD = 'email'
@@ -37,19 +39,15 @@ class User(AbstractBaseUser):
 
 
 
+
 class Ticket(models.Model):
-    PRIORITY_CHOICES = (
-        ('high', 'high'),
-        ('medium', 'medium'),
-        ('low', 'low'),
-    )
     subject = models.CharField(max_length=100)
     body = models.TextField()
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
+    priority = models.CharField(max_length=20)
+    contact_details = models.TextField()
     email = models.EmailField()
     phone_number = models.CharField(max_length=15)
 
     def __str__(self):
         return self.subject
-
 

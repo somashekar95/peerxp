@@ -44,8 +44,15 @@ class UserForm(forms.ModelForm):
 
         
 
+
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['subject', 'body', 'priority', 'email', 'phone_number']
-
+        fields = [
+            "subject",
+            "body",
+            "priority",
+            "contact_details",
+            "email",
+            "phone_number",
+        ]

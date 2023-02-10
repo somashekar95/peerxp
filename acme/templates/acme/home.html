@@ -1,4 +1,4 @@
-{% if messages %}
+{% comment %} {% if messages %}
     {% for message in messages %}
         <p class="alert alert-{{ message.tags }}">{{ message }}</p>
     {% endfor %}
@@ -22,4 +22,4 @@
     {% endfor %}
 </table>
 
-<a href="{% url 'create_department' %}">Create Department</a>
+<a href="{% url 'create_department' %}">Create Department</a> {% endcomment %}

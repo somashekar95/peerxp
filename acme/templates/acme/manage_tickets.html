@@ -1,33 +1,22 @@
-{% extends 'base.html' %}
-
-{% block content %}
-<h2>Manage Tickets</h2>
-
-<table>
-  <thead>
-    <tr>
-      <th>Ticket ID</th>
-      <th>Subject</th>
-      <th>Priority</th>
-      <th>Created at</th>
-      {% if user.is_admin %}
-      <th>Actions</th>
-      {% endif %}
-    </tr>
-  </thead>
-  <tbody>
-    {% for ticket in tickets %}
-    <tr>
-      <td>{{ ticket.ticket_id }}</td>
-      <td>{{ ticket.subject }}</td>
-      <td>{{ ticket.priority }}</td>
-      <td>{{ ticket.created_at }}</td>
-      {% if user.is_admin %}
-      <td><a href="{% url 'delete_ticket' ticket.id %}">Delete</a></td>
-      {% endif %}
-    </tr>
-    {% endfor %}
-  </tbody>
+<table border="2">
+    <thead>
+        <tr>
+            <th>Ticket ID</th>
+            <th>Subject</th>
+            <th>Priority</th>
+            <th>Created at</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket.ticket_id }}</td>
+                <td>{{ ticket.subject }}</td>
+                <td>{{ ticket.priority }}</td>
+                <td>{{ ticket.created_at }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
 </table>
-{%
+
 

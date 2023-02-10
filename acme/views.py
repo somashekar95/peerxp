@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required 
-
+from django.views.generic.base import TemplateView
 
 
 def home2(request):
@@ -41,19 +41,6 @@ def create_user(request):
         form = UserForm()
 
     return render(request, "acme/create_user.html", {"form": form})
-
-def assign_department(request, pk):
-    user = User.objects.get(id=pk)
-    if request.method == 'POST':
-        pk = request.POST.get('department')
-        department = Department.objects.get(id=pk)
-        user.department = department
-        user.save()
-        return redirect("dashboard")
-
-    departments = Department.objects.all()
-
-    return render(request, "acme/assign_department.html", {"user": user, "departments": departments})
 
 
 
@@ -94,93 +81,82 @@ def delete_department(request, pk):
         return redirect("home")
 
     department.delete()
-    return redirect("home")
+    form = DepartmentForm(instance=department)
+
+    return render(request, "acme/delete_department.html", {"form": form})
 
 
 
 
+import base64
+
+def ticket_created(request):
+    users = User.objects.all()
+    return render(request, "acme/ticket_created.html", {"users": users})
 
 def create_ticket(request):
     if request.method == 'POST':
         form = TicketForm(request.POST)
         if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.created_by = request.user
-            ticket.email = request.user.email
-            ticket.phone_number = request.user.phone_number
-            ticket.save()
+            subject = form.cleaned_data['subject']
+            body = form.cleaned_data['body']
+            priority = form.cleaned_data['priority']
+            email = form.cleaned_data['email']
+            phone_number = form.cleaned_data['phone_number']
 
-            # Post the new ticket to ZenDesk using their Create Ticket API
-            response = requests.post(
-                'https://your-zendesk-domain.zendesk.com/api/v2/tickets.json',
-                headers={'Authorization': f'Bearer {your_zendesk_api_token}'},
-                json={
-                    'ticket': {
-                        'subject': ticket.subject,
-                        'comment': {
-                            'body': ticket.body
-                        },
-                        'priority': ticket.priority,
-                        'requester': {
-                            'email': ticket.email,
-                            'phone': ticket.phone_number
-                        }
+            # Your ZenDesk API credentials
+            auth = base64.b64encode("{}:{}".format("username", "password").encode()).decode()
+            headers = {
+                "Authorization": "Basic {}".format(auth),
+                "Content-Type": "application/json"
+            }
+
+            # The data to create a new ticket
+            ticket_data = {
+                "ticket": {
+                    "subject": subject,
+                    "comment": {
+                        "body": body
+                    },
+                    "priority": priority,
+                    "requester": {
+                        "email": email,
+                        "phone": phone_number
                     }
                 }
-            )
+            }
+
+            # Post the ticket to ZenDesk API
+            response = requests.post("https://{}.zendesk.com/api/v2/tickets.json".format("your_subdomain"), headers=headers, json=ticket_data)
 
             if response.status_code == 201:
-                messages.success(request, 'Your ticket has been created successfully!')
-                return redirect('ticket_confirmation')
+                # Ticket created successfully, redirect to confirmation page
+                return redirect("ticket_created")
             else:
-                messages.error(request, 'Something went wrong, please try again.')
+                # Error creating the ticket, show error message
+                return render(request, "acme/create_ticket.html", {"form": form, "error": "Error creating ticket"})
     else:
         form = TicketForm()
 
-    return render(request, 'acme/create_ticket.html', {'form': form})
-
-@login_required
-def ticket_confirmation(request):
-    return render(request, 'acme/ticket_confirmation.html')
+    return render(request, "acme/create_ticket.html", {"form": form})
 
 
-@login_required
-def manage_tickets(request):
-    if request.user.is_admin:
-        # Fetch all tickets in the organization
-        response = requests.get(
-            'https://your-zendesk-domain.zendesk.com/api/v2/tickets.json',
-            headers={'Authorization': f'Bearer {your_zendesk_api_token}'}
-        )
-    else:
-        # Fetch all tickets created by the user
-        response = requests.get(
-            f'https://your-zendesk-domain.zendesk.com/api/v2/tickets/search.json?query=requester:{request.user.email}',
-            headers={'Authorization': f'Bearer {your_zendesk_api_token}'}
-        )
 
-    tickets = response.json()['tickets']
 
-    return render(request, 'acme/manage_tickets.html', {'tickets': tickets})
+class ManageTicketsView(TemplateView):
+    template_name = 'acme/manage_tickets.html'
 
-@login_required
-def delete_ticket(request, id):
-    # Check if the user is an admin
-    if not request.user.is_admin:
-        return redirect('tickets:manage_tickets')
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        if user.is_staff:
+            # Fetch all tickets for Admins
+            context['tickets'] = Ticket.objects.all()
+        else:
+            # Fetch all tickets created by the User
+            context['tickets'] = Ticket.objects.filter(created_by=user)
+        return context
 
-    # Delete the ticket using the ZenDesk Delete Ticket API
-    response = requests.delete(
-        f'https://your-zendesk-domain.zendesk.com/api/v2/tickets/{id}.json',
-        headers={'Authorization': f'Bearer {your_zendesk_api_token}'}
-    )
 
-    if response.status_code == 200:
-        # If the ticket was deleted successfully, redirect the user back to the manage tickets page
-        messages.success(request, 'Ticket deleted successfully.')
-        return redirect('tickets:manage_tickets')
-    else:
-        # If the ticket could not be deleted, show an error message
-        messages.error(request, 'Failed to delete ticket.')
-        return redirect('tickets:manage_tickets')
+
 
